@@ -1,19 +1,17 @@
 ---
 name: setup-opencode-hooks
-description: Set up OpenCode hooks to run composer check (Pest + Pint + PHPStan + Rector) before every commit. Use when user wants to enforce code quality on commit, add pre-commit quality gates, or set up composer check as an OpenCode hook.
+description: Set up an OpenCode plugin to run composer check (Pest + Pint + PHPStan + Rector) before every bash commit command. Use when user wants to enforce code quality on commit, add pre-commit quality gates, or set up composer check as an OpenCode plugin.
 ---
 
 # Setup OpenCode Hooks
 
-Configures OpenCode to run `composer check` — the project's quality gate — before every commit.
+Sets up an OpenCode `tool.execute.before` plugin that runs `composer check` before any `git commit` command the agent tries to execute, blocking the commit if checks fail.
 
 `composer check` runs in sequence:
 1. **Pest** — test suite must pass
 2. **Pint** — code must be formatted (`--test` mode, no auto-fix)
 3. **PHPStan** — static analysis must pass
 4. **Rector** — no pending refactors (`--dry-run` mode)
-
-A commit is blocked if any of these fail.
 
 ## Steps
 
@@ -44,69 +42,33 @@ Confirm with the user before writing. If they use different tools (e.g. `pest` d
 composer check
 ```
 
-Fix any failures before proceeding. Don't install hooks that immediately block on a broken codebase.
+Fix any failures before proceeding. Don't install a plugin that immediately blocks on a broken codebase.
 
 ### 3. Ask scope
 
-Ask the user: install for **this project only** (`.opencode/settings.json`) or **all projects** (`~/.opencode/settings.json`)?
+Ask the user: install for **this project only** (`.opencode/plugins/`) or **all projects** (`~/.config/opencode/plugins/`)?
 
-### 4. Copy the hook script
+### 4. Copy the plugin
 
-The bundled script is at: [scripts/composer-check.sh](scripts/composer-check.sh)
+The bundled plugin is at: [plugins/composer-check.ts](plugins/composer-check.ts)
 
 Copy it to the target location:
 
-- **Project**: `.opencode/hooks/composer-check.sh`
-- **Global**: `~/.opencode/hooks/composer-check.sh`
+- **Project**: `.opencode/plugins/composer-check.ts`
+- **Global**: `~/.config/opencode/plugins/composer-check.ts`
 
-Make it executable:
+No config file changes are needed — OpenCode automatically loads all `.js` and `.ts` files from those directories at startup.
 
-```bash
-chmod +x .opencode/hooks/composer-check.sh
-```
+### 5. Ask about customization
 
-### 5. Add hook to OpenCode settings
-
-**Project** (`.opencode/settings.json`):
-
-```json
-{
-  "hooks": {
-    "beforeCommit": [
-      {
-        "command": "\"$OPENCODE_PROJECT_DIR\"/.opencode/hooks/composer-check.sh"
-      }
-    ]
-  }
-}
-```
-
-**Global** (`~/.opencode/settings.json`):
-
-```json
-{
-  "hooks": {
-    "beforeCommit": [
-      {
-        "command": "~/.opencode/hooks/composer-check.sh"
-      }
-    ]
-  }
-}
-```
-
-If the settings file already exists, merge into the existing `hooks.beforeCommit` array.
+Ask if the user wants to adjust which checks run, or whether they want to block on `git commit` only vs. other patterns (e.g. also block on `git push`). Edit the plugin accordingly.
 
 ### 6. Verify
 
-Run a quick test to confirm the hook executes correctly:
+Restart OpenCode. Try asking the agent to commit with a failing test — it should be blocked. On a clean codebase it should commit successfully.
 
-```bash
-.opencode/hooks/composer-check.sh
-```
+### 7. Notes
 
-Should exit 0 on a clean codebase and exit 1 (with output) on a failure.
-
-### 7. Done
-
-Tell the user that `composer check` will now run automatically before every commit OpenCode makes. They can still bypass it manually with `git commit` directly — this only gates OpenCode-initiated commits.
+- This is a **project-level plugin** if placed in `.opencode/plugins/` — safe to commit to git.
+- It is a **global plugin** if placed in `~/.config/opencode/plugins/` — applies to all projects.
+- This only gates OpenCode-initiated commits. Running `git commit` yourself in the terminal is unaffected.

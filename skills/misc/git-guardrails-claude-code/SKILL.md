@@ -5,7 +5,7 @@ description: Set up an OpenCode plugin to block dangerous git commands (push, re
 
 # Setup Git Guardrails
 
-Sets up an OpenCode `beforeBash` hook that intercepts and blocks dangerous git commands before they execute.
+Sets up an OpenCode `tool.execute.before` plugin that intercepts and blocks dangerous git commands before they execute.
 
 ## What Gets Blocked
 
@@ -15,71 +15,35 @@ Sets up an OpenCode `beforeBash` hook that intercepts and blocks dangerous git c
 - `git branch -D`
 - `git checkout .` / `git restore .`
 
-When blocked, the agent sees a message telling it that it does not have authority to run these commands.
+When blocked, OpenCode throws an error telling it that it does not have authority to run these commands.
 
 ## Steps
 
 ### 1. Ask scope
 
-Ask the user: install for **this project only** (`.opencode/settings.json`) or **all projects** (`~/.opencode/settings.json`)?
+Ask the user: install for **this project only** (`.opencode/plugins/`) or **all projects** (`~/.config/opencode/plugins/`)?
 
-### 2. Copy the hook script
+### 2. Copy the plugin
 
-The bundled script is at: [scripts/block-dangerous-git.sh](scripts/block-dangerous-git.sh)
+The bundled plugin is at: [plugins/block-dangerous-git.ts](plugins/block-dangerous-git.ts)
 
-Copy it to the target location based on scope:
+Copy it to the target location:
 
-- **Project**: `.opencode/hooks/block-dangerous-git.sh`
-- **Global**: `~/.opencode/hooks/block-dangerous-git.sh`
+- **Project**: `.opencode/plugins/block-dangerous-git.ts`
+- **Global**: `~/.config/opencode/plugins/block-dangerous-git.ts`
 
-Make it executable:
+No config file changes are needed — OpenCode automatically loads all `.js` and `.ts` files from those directories at startup.
 
-```bash
-chmod +x .opencode/hooks/block-dangerous-git.sh
-```
+### 3. Ask about customization
 
-### 3. Add hook to OpenCode settings
+Ask if the user wants to add or remove any patterns from the blocked list. Edit the `DANGEROUS_PATTERNS` array in the copied plugin accordingly.
 
-**Project** (`.opencode/settings.json`):
+### 4. Verify
 
-```json
-{
-  "hooks": {
-    "beforeBash": [
-      {
-        "command": "\"$OPENCODE_PROJECT_DIR\"/.opencode/hooks/block-dangerous-git.sh"
-      }
-    ]
-  }
-}
-```
+Restart OpenCode. The plugin loads at startup. To confirm it's active, ask OpenCode to run `git push` — it should be blocked with an error message.
 
-**Global** (`~/.opencode/settings.json`):
+### 5. Notes
 
-```json
-{
-  "hooks": {
-    "beforeBash": [
-      {
-        "command": "~/.opencode/hooks/block-dangerous-git.sh"
-      }
-    ]
-  }
-}
-```
-
-If the settings file already exists, merge the hook into the existing `hooks.beforeBash` array — don't overwrite other settings.
-
-### 4. Ask about customization
-
-Ask if the user wants to add or remove any patterns from the blocked list. Edit the copied script accordingly.
-
-### 5. Verify
-
-Run a quick test:
-
-```bash
-echo '{"tool_input":{"command":"git push origin main"}}' | .opencode/hooks/block-dangerous-git.sh
-```
-
-Should exit with code 2 and print a BLOCKED message to stderr.
+- This is a **project-level plugin** if placed in `.opencode/plugins/` — safe to commit to git.
+- It is a **global plugin** if placed in `~/.config/opencode/plugins/` — applies to all projects.
+- The plugin only blocks the AI agent. Running `git push` yourself in the terminal is unaffected.
