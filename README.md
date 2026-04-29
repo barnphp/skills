@@ -39,8 +39,8 @@ These skills fix four failure modes I see repeatedly in AI-assisted Laravel deve
 
 **The Fix** is a grilling session before you write a single line of code:
 
-- [`/grill-me`](./skills/productivity/grill-me/SKILL.md) — for any plan or design decision
-- [`/grill-with-docs`](./skills/engineering/grill-with-docs/SKILL.md) — same, but cross-references your `CONTEXT.md` and ADRs to keep decisions consistent with what you've already built
+- [`/grill-me`](./skills/grill-me/SKILL.md) — for any plan or design decision
+- [`/grill-with-docs`](./skills/grill-with-docs/SKILL.md) — same, but cross-references your `CONTEXT.md` and ADRs to keep decisions consistent with what you've already built
 
 Use them every time you're about to make a meaningful change.
 
@@ -66,7 +66,7 @@ This concision pays off every session.
 
 </details>
 
-[`/grill-with-docs`](./skills/engineering/grill-with-docs/SKILL.md) builds this shared language inline as you design, and records hard-to-explain decisions as ADRs.
+[`/grill-with-docs`](./skills/grill-with-docs/SKILL.md) builds this shared language inline as you design, and records hard-to-explain decisions as ADRs.
 
 > [!TIP]
 > A shared language has compounding benefits:
@@ -87,11 +87,11 @@ This concision pays off every session.
 
 For automated tests, a red-green-refactor loop is critical. The agent writes a failing Pest test first, then writes the minimal code to pass it. Each vertical slice — migration, model, action, controller, route, feature test — is completed before the next begins.
 
-- [`/tdd`](./skills/engineering/tdd/SKILL.md) — red-green-refactor with Pest v4, feature tests, unit tests, datasets, and browser testing
+- [`/tdd`](./skills/tdd/SKILL.md) — red-green-refactor with Pest v4, feature tests, unit tests, datasets, and browser testing
 
 For debugging, the agent pulls live context directly from your application using [laravel/boost](https://github.com/laravel/boost) MCP tools — reading the last error, scanning log entries, inspecting the database schema — rather than asking you to sprinkle `dd()` calls.
 
-- [`/diagnose`](./skills/engineering/diagnose/SKILL.md) — AI-native debugging loop powered by laravel/boost
+- [`/diagnose`](./skills/diagnose/SKILL.md) — AI-native debugging loop powered by laravel/boost
 
 ### #4: We Built A Ball Of Mud
 
@@ -103,9 +103,9 @@ For debugging, the agent pulls live context directly from your application using
 
 **The Fix** is caring about Laravel architecture from day one:
 
-- [`/to-prd`](./skills/engineering/to-prd/SKILL.md) — before writing code, identify which Actions, Models, and Jobs are involved
-- [`/zoom-out`](./skills/engineering/zoom-out/SKILL.md) — ask the agent where a piece of code sits in the request lifecycle and whether it belongs in a Job, an Action, or a Controller
-- [`/improve-codebase-architecture`](./skills/engineering/improve-codebase-architecture/SKILL.md) — rescue a drifting codebase by surfacing fat controllers, anemic models, and misplaced business logic. Run it every few days.
+- [`/to-prd`](./skills/to-prd/SKILL.md) — before writing code, identify which Actions, Models, and Jobs are involved
+- [`/zoom-out`](./skills/zoom-out/SKILL.md) — ask the agent where a piece of code sits in the request lifecycle and whether it belongs in a Job, an Action, or a Controller
+- [`/improve-codebase-architecture`](./skills/improve-codebase-architecture/SKILL.md) — rescue a drifting codebase by surfacing fat controllers, anemic models, and misplaced business logic. Run it every few days.
 
 ### Summary
 
@@ -123,27 +123,27 @@ Software engineering fundamentals matter more than ever. These skills are Barnph
 
 Skills for daily Laravel code work.
 
-- **[diagnose](./skills/engineering/diagnose/SKILL.md)** — AI-native debugging loop powered by laravel/boost MCP tools: last-error → read-log-entries → database-schema → hypothesise → fix → regression-test.
-- **[grill-with-docs](./skills/engineering/grill-with-docs/SKILL.md)** — Grilling session that challenges your plan against the existing domain model, sharpens terminology, and updates `CONTEXT.md` and ADRs inline.
-- **[triage](./skills/engineering/triage/SKILL.md)** — Triage issues through a state machine of triage roles, using Laravel-flavoured vocabulary and labels.
-- **[improve-codebase-architecture](./skills/engineering/improve-codebase-architecture/SKILL.md)** — Surface fat controllers, anemic models, and misplaced business logic. Proposes refactors toward Laravel conventions (Actions, Form Requests, Jobs, Policies).
-- **[setup-barnphp-skills](./skills/engineering/setup-barnphp-skills/SKILL.md)** — Scaffold the per-repo config (issue tracker, triage labels, `CONTEXT.md` starter vocabulary, `docs/adr/`) that the other engineering skills consume. Run once per repo.
-- **[tdd](./skills/engineering/tdd/SKILL.md)** — Test-driven development with Pest v4: red-green-refactor, feature tests, unit tests, datasets, and browser testing. One vertical Laravel slice at a time.
-- **[to-issues](./skills/engineering/to-issues/SKILL.md)** — Break any plan, spec, or PRD into independently-grabbable GitHub issues using Laravel vertical slices (migration → model → action → controller → route → Pest feature test).
-- **[to-prd](./skills/engineering/to-prd/SKILL.md)** — Turn the current conversation context into a PRD and submit it as a GitHub issue. No interview — synthesizes what you've already discussed.
-- **[zoom-out](./skills/engineering/zoom-out/SKILL.md)** — Tell the agent to zoom out, map the relevant Laravel layers, and explain where a piece of code sits in the request lifecycle.
+- **[diagnose](./skills/diagnose/SKILL.md)** — AI-native debugging loop powered by laravel/boost MCP tools: last-error → read-log-entries → database-schema → hypothesise → fix → regression-test.
+- **[grill-with-docs](./skills/grill-with-docs/SKILL.md)** — Grilling session that challenges your plan against the existing domain model, sharpens terminology, and updates `CONTEXT.md` and ADRs inline.
+- **[triage](./skills/triage/SKILL.md)** — Triage issues through a state machine of triage roles, using Laravel-flavoured vocabulary and labels.
+- **[improve-codebase-architecture](./skills/improve-codebase-architecture/SKILL.md)** — Surface fat controllers, anemic models, and misplaced business logic. Proposes refactors toward Laravel conventions (Actions, Form Requests, Jobs, Policies).
+- **[setup-barnphp-skills](./skills/setup-barnphp-skills/SKILL.md)** — Scaffold the per-repo config (issue tracker, triage labels, `CONTEXT.md` starter vocabulary, `docs/adr/`) that the other engineering skills consume. Run once per repo.
+- **[tdd](./skills/tdd/SKILL.md)** — Test-driven development with Pest v4: red-green-refactor, feature tests, unit tests, datasets, and browser testing. One vertical Laravel slice at a time.
+- **[to-issues](./skills/to-issues/SKILL.md)** — Break any plan, spec, or PRD into independently-grabbable GitHub issues using Laravel vertical slices (migration → model → action → controller → route → Pest feature test).
+- **[to-prd](./skills/to-prd/SKILL.md)** — Turn the current conversation context into a PRD and submit it as a GitHub issue. No interview — synthesizes what you've already discussed.
+- **[zoom-out](./skills/zoom-out/SKILL.md)** — Tell the agent to zoom out, map the relevant Laravel layers, and explain where a piece of code sits in the request lifecycle.
 
 ### Productivity
 
 General workflow tools, not code-specific.
 
-- **[caveman](./skills/productivity/caveman/SKILL.md)** — Ultra-compressed communication mode. Cuts token usage ~75% by dropping filler while keeping full technical accuracy.
-- **[grill-me](./skills/productivity/grill-me/SKILL.md)** — Get relentlessly interviewed about a plan or design until every branch of the decision tree is resolved.
-- **[write-a-skill](./skills/productivity/write-a-skill/SKILL.md)** — Create new skills with proper structure, progressive disclosure, and bundled resources.
+- **[caveman](./skills/caveman/SKILL.md)** — Ultra-compressed communication mode. Cuts token usage ~75% by dropping filler while keeping full technical accuracy.
+- **[grill-me](./skills/grill-me/SKILL.md)** — Get relentlessly interviewed about a plan or design until every branch of the decision tree is resolved.
+- **[write-a-skill](./skills/write-a-skill/SKILL.md)** — Create new skills with proper structure, progressive disclosure, and bundled resources.
 
 ### Misc
 
 Tools kept around for specific situations.
 
-- **[git-guardrails](./skills/misc/git-guardrails-claude-code/SKILL.md)** — Set up an OpenCode plugin to block dangerous git commands (push, reset --hard, clean, etc.) before they execute.
-- **[setup-opencode-hooks](./skills/misc/setup-opencode-hooks/SKILL.md)** — Set up OpenCode hooks to run `composer check` (Pest + Pint + PHPStan + Rector) before every commit.
+- **[git-guardrails](./skills/git-guardrails-claude-code/SKILL.md)** — Set up an OpenCode plugin to block dangerous git commands (push, reset --hard, clean, etc.) before they execute.
+- **[setup-opencode-hooks](./skills/setup-opencode-hooks/SKILL.md)** — Set up OpenCode hooks to run `composer check` (Pest + Pint + PHPStan + Rector) before every commit.
