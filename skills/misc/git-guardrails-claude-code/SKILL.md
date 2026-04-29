@@ -1,11 +1,11 @@
 ---
-name: git-guardrails-claude-code
-description: Set up Claude Code hooks to block dangerous git commands (push, reset --hard, clean, branch -D, etc.) before they execute. Use when user wants to prevent destructive git operations, add git safety hooks, or block git push/reset in Claude Code.
+name: git-guardrails
+description: Set up an OpenCode plugin to block dangerous git commands (push, reset --hard, clean, branch -D, etc.) before they execute. Use when user wants to prevent destructive git operations or add git safety guardrails to OpenCode.
 ---
 
 # Setup Git Guardrails
 
-Sets up a PreToolUse hook that intercepts and blocks dangerous git commands before Claude executes them.
+Sets up an OpenCode `beforeBash` hook that intercepts and blocks dangerous git commands before they execute.
 
 ## What Gets Blocked
 
@@ -15,13 +15,13 @@ Sets up a PreToolUse hook that intercepts and blocks dangerous git commands befo
 - `git branch -D`
 - `git checkout .` / `git restore .`
 
-When blocked, Claude sees a message telling it that it does not have authority to access these commands.
+When blocked, the agent sees a message telling it that it does not have authority to run these commands.
 
 ## Steps
 
 ### 1. Ask scope
 
-Ask the user: install for **this project only** (`.claude/settings.json`) or **all projects** (`~/.claude/settings.json`)?
+Ask the user: install for **this project only** (`.opencode/settings.json`) or **all projects** (`~/.opencode/settings.json`)?
 
 ### 2. Copy the hook script
 
@@ -29,67 +29,57 @@ The bundled script is at: [scripts/block-dangerous-git.sh](scripts/block-dangero
 
 Copy it to the target location based on scope:
 
-- **Project**: `.claude/hooks/block-dangerous-git.sh`
-- **Global**: `~/.claude/hooks/block-dangerous-git.sh`
+- **Project**: `.opencode/hooks/block-dangerous-git.sh`
+- **Global**: `~/.opencode/hooks/block-dangerous-git.sh`
 
-Make it executable with `chmod +x`.
+Make it executable:
 
-### 3. Add hook to settings
+```bash
+chmod +x .opencode/hooks/block-dangerous-git.sh
+```
 
-Add to the appropriate settings file:
+### 3. Add hook to OpenCode settings
 
-**Project** (`.claude/settings.json`):
+**Project** (`.opencode/settings.json`):
 
 ```json
 {
   "hooks": {
-    "PreToolUse": [
+    "beforeBash": [
       {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/block-dangerous-git.sh"
-          }
-        ]
+        "command": "\"$OPENCODE_PROJECT_DIR\"/.opencode/hooks/block-dangerous-git.sh"
       }
     ]
   }
 }
 ```
 
-**Global** (`~/.claude/settings.json`):
+**Global** (`~/.opencode/settings.json`):
 
 ```json
 {
   "hooks": {
-    "PreToolUse": [
+    "beforeBash": [
       {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/block-dangerous-git.sh"
-          }
-        ]
+        "command": "~/.opencode/hooks/block-dangerous-git.sh"
       }
     ]
   }
 }
 ```
 
-If the settings file already exists, merge the hook into existing `hooks.PreToolUse` array — don't overwrite other settings.
+If the settings file already exists, merge the hook into the existing `hooks.beforeBash` array — don't overwrite other settings.
 
 ### 4. Ask about customization
 
-Ask if user wants to add or remove any patterns from the blocked list. Edit the copied script accordingly.
+Ask if the user wants to add or remove any patterns from the blocked list. Edit the copied script accordingly.
 
 ### 5. Verify
 
 Run a quick test:
 
 ```bash
-echo '{"tool_input":{"command":"git push origin main"}}' | <path-to-script>
+echo '{"tool_input":{"command":"git push origin main"}}' | .opencode/hooks/block-dangerous-git.sh
 ```
 
 Should exit with code 2 and print a BLOCKED message to stderr.

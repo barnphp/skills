@@ -1,61 +1,143 @@
-# Good and Bad Tests
+# Tests Reference
 
-## Good Tests
+## Feature Tests (most common)
 
-**Integration-style**: Test through real interfaces, not mocks of internal parts.
+Feature tests exercise the full Laravel stack through HTTP. They are the default for any behavior that has a route.
 
-```typescript
-// GOOD: Tests observable behavior
-test("user can checkout with valid cart", async () => {
-  const cart = createCart();
-  cart.add(product);
-  const result = await checkout(cart, paymentMethod);
-  expect(result.status).toBe("confirmed");
+```php
+// tests/Feature/Posts/CreatePostTest.php
+
+use App\Models\User;
+
+it('allows authenticated users to create a post', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)
+        ->postJson('/api/posts', [
+            'title' => 'Hello World',
+            'body'  => 'My first post.',
+        ]);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.title', 'Hello World');
+
+    $this->assertDatabaseHas('posts', [
+        'title'   => 'Hello World',
+        'user_id' => $user->id,
+    ]);
+});
+
+it('rejects unauthenticated requests', function () {
+    $response = $this->postJson('/api/posts', [
+        'title' => 'Hello World',
+        'body'  => 'Content.',
+    ]);
+
+    $response->assertUnauthorized();
+});
+
+it('validates required fields', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)
+        ->postJson('/api/posts', []);
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors(['title', 'body']);
 });
 ```
 
-Characteristics:
+## Unit Tests
 
-- Tests behavior users/callers care about
-- Uses public API only
-- Survives internal refactors
-- Describes WHAT, not HOW
-- One logical assertion per test
+Unit tests exercise a single class in isolation without booting Laravel. Use for Actions with complex logic, value objects, or pure functions.
 
-## Bad Tests
+```php
+// tests/Unit/Actions/CreatePostActionTest.php
 
-**Implementation-detail tests**: Coupled to internal structure.
+use App\Actions\CreatePostAction;
+use App\Models\Post;
+use App\Models\User;
 
-```typescript
-// BAD: Tests implementation details
-test("checkout calls paymentService.process", async () => {
-  const mockPayment = jest.mock(paymentService);
-  await checkout(cart, payment);
-  expect(mockPayment.process).toHaveBeenCalledWith(cart.total);
+it('creates a post and returns it', function () {
+    $user  = User::factory()->create();
+    $action = new CreatePostAction();
+
+    $post = $action->handle($user, 'Hello World', 'My first post.');
+
+    expect($post)
+        ->toBeInstanceOf(Post::class)
+        ->title->toBe('Hello World')
+        ->user_id->toBe($user->id);
 });
 ```
 
-Red flags:
+## Pest Datasets
 
-- Mocking internal collaborators
-- Testing private methods
-- Asserting on call counts/order
-- Test breaks when refactoring without behavior change
-- Test name describes HOW not WHAT
-- Verifying through external means instead of interface
+Use datasets to test the same behavior across multiple inputs without duplicating tests.
 
-```typescript
-// BAD: Bypasses interface to verify
-test("createUser saves to database", async () => {
-  await createUser({ name: "Alice" });
-  const row = await db.query("SELECT * FROM users WHERE name = ?", ["Alice"]);
-  expect(row).toBeDefined();
+```php
+it('rejects invalid titles', function (string $title) {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->postJson('/api/posts', ['title' => $title, 'body' => 'Content.'])
+        ->assertUnprocessable();
+})->with([
+    'empty string'     => [''],
+    'too long'         => [str_repeat('a', 256)],
+    'only whitespace'  => ['   '],
+]);
+```
+
+## Asserting Jobs Were Dispatched
+
+```php
+use App\Jobs\SendWelcomeEmail;
+use Illuminate\Support\Facades\Queue;
+
+it('dispatches a welcome email on registration', function () {
+    Queue::fake();
+
+    $this->postJson('/api/register', [
+        'name'     => 'John',
+        'email'    => 'john@example.com',
+        'password' => 'password',
+    ])->assertCreated();
+
+    Queue::assertPushed(SendWelcomeEmail::class);
 });
+```
 
-// GOOD: Verifies through interface
-test("createUser makes user retrievable", async () => {
-  const user = await createUser({ name: "Alice" });
-  const retrieved = await getUser(user.id);
-  expect(retrieved.name).toBe("Alice");
+## Asserting Events Were Dispatched
+
+```php
+use App\Events\PostPublished;
+use Illuminate\Support\Facades\Event;
+
+it('fires a PostPublished event', function () {
+    Event::fake();
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->postJson('/api/posts', ['title' => 'Hello', 'body' => 'World.'])
+        ->assertCreated();
+
+    Event::assertDispatched(PostPublished::class);
 });
+```
+
+## Test Naming Convention
+
+Test names should read as plain-English specifications:
+
+```php
+// Good — describes behavior
+it('prevents guests from viewing private posts');
+it('returns 404 for posts that do not exist');
+it('dispatches a notification job when a comment is posted');
+
+// Bad — describes implementation
+it('calls the PostRepository find method');
+it('sets the post status to published');
 ```

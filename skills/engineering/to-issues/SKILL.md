@@ -7,7 +7,7 @@ description: Break a plan, spec, or PRD into independently-grabbable issues on t
 
 Break a plan into independently-grabbable issues using vertical slices (tracer bullets).
 
-The issue tracker and triage label vocabulary should have been provided to you — run `/setup-matt-pocock-skills` if not.
+The issue tracker and triage label vocabulary should have been provided to you — run `/setup-barnphp-skills` if not.
 
 ## Process
 
@@ -26,9 +26,11 @@ Break the plan into **tracer bullet** issues. Each issue is a thin vertical slic
 Slices may be 'HITL' or 'AFK'. HITL slices require human interaction, such as an architectural decision or a design review. AFK slices can be implemented and merged without human interaction. Prefer AFK over HITL where possible.
 
 <vertical-slice-rules>
-- Each slice delivers a narrow but COMPLETE path through every layer (schema, API, UI, tests)
-- A completed slice is demoable or verifiable on its own
+- Each slice delivers a narrow but COMPLETE path through every Laravel layer
+- A complete Laravel slice includes: migration + model + factory + form request + action + controller + route + Pest feature test
+- A completed slice is demoable or verifiable on its own — it must produce a passing feature test
 - Prefer many thin slices over few thick ones
+- Never split a slice by layer (e.g. "write the migrations" as one issue, "write the controllers" as another) — that is horizontal slicing
 </vertical-slice-rules>
 
 ### 4. Quiz the user

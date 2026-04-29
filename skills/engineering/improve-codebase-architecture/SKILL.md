@@ -1,71 +1,82 @@
 ---
 name: improve-codebase-architecture
-description: Find deepening opportunities in a codebase, informed by the domain language in CONTEXT.md and the decisions in docs/adr/. Use when the user wants to improve architecture, find refactoring opportunities, consolidate tightly-coupled modules, or make a codebase more testable and AI-navigable.
+description: Surface Laravel architectural problems (fat controllers, logic-in-models, misplaced business logic) and propose refactors toward Laravel conventions. Use when user wants to improve architecture, find refactoring opportunities, rescue a ball-of-mud codebase, or make a Laravel project more testable and maintainable.
 ---
 
 # Improve Codebase Architecture
 
-Surface architectural friction and propose **deepening opportunities** — refactors that turn shallow modules into deep ones. The aim is testability and AI-navigability.
+Surface architectural friction in a Laravel application and propose concrete refactors toward Laravel conventions. The aim is a codebase where business logic lives in Actions, HTTP concerns live in Controllers and Form Requests, and everything is testable through its public interface.
 
-## Glossary
+This skill is *informed* by the project's domain model. Read `CONTEXT.md` and `docs/adr/` before proposing anything — the domain language names good boundaries, and ADRs record decisions the skill should not re-litigate.
 
-Use these terms exactly in every suggestion. Consistent language is the point — don't drift into "component," "service," "API," or "boundary." Full definitions in [LANGUAGE.md](LANGUAGE.md).
+## Laravel Architecture Conventions
 
-- **Module** — anything with an interface and an implementation (function, class, package, slice).
-- **Interface** — everything a caller must know to use the module: types, invariants, error modes, ordering, config. Not just the type signature.
-- **Implementation** — the code inside.
-- **Depth** — leverage at the interface: a lot of behaviour behind a small interface. **Deep** = high leverage. **Shallow** = interface nearly as complex as the implementation.
-- **Seam** — where an interface lives; a place behaviour can be altered without editing in place. (Use this, not "boundary.")
-- **Adapter** — a concrete thing satisfying an interface at a seam.
-- **Leverage** — what callers get from depth.
-- **Locality** — what maintainers get from depth: change, bugs, knowledge concentrated in one place.
+These are the opinions this skill enforces. See [conventions.md](conventions.md) for the full guide.
 
-Key principles (see [LANGUAGE.md](LANGUAGE.md) for the full list):
+| Layer | Purpose | Lives in |
+|---|---|---|
+| **Controller** | Receive HTTP, delegate, return response. Nothing else. | `app/Http/Controllers/` |
+| **Form Request** | Validate and authorize one HTTP request | `app/Http/Requests/` |
+| **Action** | One piece of business logic, one `handle()` method | `app/Actions/` |
+| **Model** | Relationships, scopes, casts, accessors. No business logic. | `app/Models/` |
+| **Job** | Deferred or background work | `app/Jobs/` |
+| **Policy** | Authorization logic for a Model | `app/Policies/` |
+| **Resource** | Transform a Model for API responses | `app/Http/Resources/` |
 
-- **Deletion test**: imagine deleting the module. If complexity vanishes, it was a pass-through. If complexity reappears across N callers, it was earning its keep.
-- **The interface is the test surface.**
-- **One adapter = hypothetical seam. Two adapters = real seam.**
+## Anti-Patterns to Surface
 
-This skill is _informed_ by the project's domain model. The domain language gives names to good seams; ADRs record decisions the skill should not re-litigate.
+When exploring, look for these:
+
+- **Fat controller** — controller method over ~20 lines, or containing business logic, queries, or direct model saves
+- **Logic in Model** — model methods that do more than relationships, scopes, casts, or accessors
+- **Validation in controller** — `$request->validate([...])` inside a controller method (should be a Form Request)
+- **God Job** — a Job that does multiple unrelated things (should be split into separate Jobs or Actions)
+- **Missing authorization** — routes without Policy checks, or authorization logic scattered across controllers
+- **N+1 queries** — eager loading absent where relationships are accessed in loops
+- **Direct model saves in controller** — `$post->save()` in a controller instead of an Action
+- **Untestable code** — logic buried where it can only be tested through a slow browser test instead of a fast feature test
 
 ## Process
 
 ### 1. Explore
 
-Read the project's domain glossary and any ADRs in the area you're touching first.
+Read `CONTEXT.md` and any relevant ADRs first. Then walk the codebase organically — note where you experience friction:
 
-Then use the Agent tool with `subagent_type=Explore` to walk the codebase. Don't follow rigid heuristics — explore organically and note where you experience friction:
-
-- Where does understanding one concept require bouncing between many small modules?
-- Where are modules **shallow** — interface nearly as complex as the implementation?
-- Where have pure functions been extracted just for testability, but the real bugs hide in how they're called (no **locality**)?
-- Where do tightly-coupled modules leak across their seams?
-- Which parts of the codebase are untested, or hard to test through their current interface?
-
-Apply the **deletion test** to anything you suspect is shallow: would deleting it concentrate complexity, or just move it? A "yes, concentrates" is the signal you want.
+- Which controllers are long? Which have `$request->validate()`?
+- Which Models have methods that dispatch events, send notifications, or make decisions?
+- Where is authorization logic? Is it in Policies or scattered in controllers?
+- Where are Jobs dispatched? Are they doing too much?
+- Which parts of the codebase have no tests, or tests that break on refactor?
+- Where would you have to touch 5 files to change one behavior?
 
 ### 2. Present candidates
 
-Present a numbered list of deepening opportunities. For each candidate:
+Present a numbered list of refactor candidates. For each candidate:
 
-- **Files** — which files/modules are involved
-- **Problem** — why the current architecture is causing friction
-- **Solution** — plain English description of what would change
-- **Benefits** — explained in terms of locality and leverage, and also in how tests would improve
+- **Files** — which files are involved
+- **Problem** — the specific anti-pattern and why it causes friction
+- **Solution** — plain English description of what would change (e.g. "Extract `StorePostController::__invoke` body into `CreatePostAction::handle`")
+- **Test impact** — would this make the code more testable? How?
 
-**Use CONTEXT.md vocabulary for the domain, and [LANGUAGE.md](LANGUAGE.md) vocabulary for the architecture.** If `CONTEXT.md` defines "Order," talk about "the Order intake module" — not "the FooBarHandler," and not "the Order service."
+**Use `CONTEXT.md` vocabulary for domain terms.** If the glossary defines "Action", say "extract into an Action" — not "extract into a service class".
 
-**ADR conflicts**: if a candidate contradicts an existing ADR, only surface it when the friction is real enough to warrant revisiting the ADR. Mark it clearly (e.g. _"contradicts ADR-0007 — but worth reopening because…"_). Don't list every theoretical refactor an ADR forbids.
+**ADR conflicts**: if a candidate contradicts an existing ADR, only surface it when the friction is real enough to warrant reopening. Mark it clearly.
 
-Do NOT propose interfaces yet. Ask the user: "Which of these would you like to explore?"
+Do NOT write code yet. Ask the user: "Which of these would you like to tackle first?"
 
-### 3. Grilling loop
+### 3. Refactor loop
 
-Once the user picks a candidate, drop into a grilling conversation. Walk the design tree with them — constraints, dependencies, the shape of the deepened module, what sits behind the seam, what tests survive.
+Once the user picks a candidate:
 
-Side effects happen inline as decisions crystallize:
+1. Confirm the existing tests pass (`composer check`)
+2. Propose the specific refactor — show before/after signatures, not full code
+3. Get approval, then implement
+4. Run `composer check` — all tests must still pass after each step
+5. If tests break, the refactor changed behavior — stop, investigate, fix
 
-- **Naming a deepened module after a concept not in `CONTEXT.md`?** Add the term to `CONTEXT.md` — same discipline as `/grill-with-docs` (see [CONTEXT-FORMAT.md](../grill-with-docs/CONTEXT-FORMAT.md)). Create the file lazily if it doesn't exist.
-- **Sharpening a fuzzy term during the conversation?** Update `CONTEXT.md` right there.
-- **User rejects the candidate with a load-bearing reason?** Offer an ADR, framed as: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [ADR-FORMAT.md](../grill-with-docs/ADR-FORMAT.md).
-- **Want to explore alternative interfaces for the deepened module?** See [INTERFACE-DESIGN.md](INTERFACE-DESIGN.md).
+Side effects as decisions crystallize:
+
+- **Naming a new Action or class after a concept not in `CONTEXT.md`?** Add the term to `CONTEXT.md`. See [CONTEXT-FORMAT.md](../grill-with-docs/CONTEXT-FORMAT.md).
+- **User rejects a candidate with a load-bearing reason?** Offer an ADR. See [ADR-FORMAT.md](../grill-with-docs/ADR-FORMAT.md).
+
+See [conventions.md](conventions.md) for detailed refactor patterns.

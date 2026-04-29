@@ -31,7 +31,7 @@ skill-name/
 ├── REFERENCE.md       # Detailed docs (if needed)
 ├── EXAMPLES.md        # Usage examples (if needed)
 └── scripts/           # Utility scripts (if needed)
-    └── helper.js
+    └── helper.sh
 ```
 
 ## SKILL.md Template
@@ -76,13 +76,13 @@ The description is **the only thing your agent sees** when deciding which skill 
 **Good example**:
 
 ```
-Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDF files or when user mentions PDFs, forms, or document extraction.
+Validate and authorize incoming HTTP requests for a Laravel resource, generate Form Request classes with rules() and authorize() methods. Use when user wants to add validation, create a Form Request, or add authorization to a controller.
 ```
 
 **Bad example**:
 
 ```
-Helps with documents.
+Helps with requests.
 ```
 
 The bad example gives your agent no way to distinguish this from other document skills.

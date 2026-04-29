@@ -1,59 +1,84 @@
-# When to Mock
+# Mocking in Pest / Laravel
 
-Mock at **system boundaries** only:
+## Default: Don't Mock
 
-- External APIs (payment, email, etc.)
-- Databases (sometimes - prefer test DB)
-- Time/randomness
-- File system (sometimes)
+Prefer real implementations over mocks. Laravel's in-memory SQLite, `Queue::fake()`, `Mail::fake()`, `Event::fake()`, and `Storage::fake()` give you isolation without fake objects that drift from real behavior.
 
-Don't mock:
+**Mock only when:**
+- The dependency is an external HTTP API (use `Http::fake()`)
+- The dependency is expensive or non-deterministic (time, randomness)
+- The real implementation has side effects you genuinely cannot run in tests (sending real SMS, charging real cards)
 
-- Your own classes/modules
-- Internal collaborators
-- Anything you control
+## Laravel Fakes (preferred)
 
-## Designing for Mockability
+Always prefer Laravel's built-in fakes over writing manual mocks.
 
-At system boundaries, design interfaces that are easy to mock:
+```php
+// Queue
+Queue::fake();
+Queue::assertPushed(SendWelcomeEmail::class);
+Queue::assertNotPushed(AnotherJob::class);
 
-**1. Use dependency injection**
+// Mail
+Mail::fake();
+Mail::assertSent(WelcomeMail::class, fn ($mail) => $mail->hasTo('john@example.com'));
 
-Pass external dependencies in rather than creating them internally:
+// Notifications
+Notification::fake();
+Notification::assertSentTo($user, VerifyEmailNotification::class);
 
-```typescript
-// Easy to mock
-function processPayment(order, paymentClient) {
-  return paymentClient.charge(order.total);
-}
+// Storage
+Storage::fake('public');
+Storage::disk('public')->assertExists('avatars/1.jpg');
 
-// Hard to mock
-function processPayment(order) {
-  const client = new StripeClient(process.env.STRIPE_KEY);
-  return client.charge(order.total);
-}
+// HTTP client
+Http::fake([
+    'api.stripe.com/*' => Http::response(['id' => 'ch_123'], 200),
+]);
 ```
 
-**2. Prefer SDK-style interfaces over generic fetchers**
+## Mockery (for class dependencies)
 
-Create specific functions for each external operation instead of one generic function with conditional logic:
+When you genuinely need to mock a class dependency (e.g. a third-party SDK injected via the service container), use Mockery:
 
-```typescript
-// GOOD: Each function is independently mockable
-const api = {
-  getUser: (id) => fetch(`/users/${id}`),
-  getOrders: (userId) => fetch(`/users/${userId}/orders`),
-  createOrder: (data) => fetch('/orders', { method: 'POST', body: data }),
-};
+```php
+use Mockery;
+use App\Services\StripeClient;
 
-// BAD: Mocking requires conditional logic inside the mock
-const api = {
-  fetch: (endpoint, options) => fetch(endpoint, options),
-};
+it('handles a failed payment gracefully', function () {
+    $stripe = Mockery::mock(StripeClient::class);
+    $stripe->shouldReceive('charge')
+        ->once()
+        ->andThrow(new \Exception('Card declined'));
+
+    $this->app->instance(StripeClient::class, $stripe);
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->postJson('/api/checkout', ['amount' => 1000])
+        ->assertUnprocessable();
+});
 ```
 
-The SDK approach means:
-- Each mock returns one specific shape
-- No conditional logic in test setup
-- Easier to see which endpoints a test exercises
-- Type safety per endpoint
+## Time
+
+Use Laravel's `travelTo()` for time-sensitive tests:
+
+```php
+it('marks a subscription as expired after 30 days', function () {
+    $subscription = Subscription::factory()->create([
+        'expires_at' => now()->addDays(30),
+    ]);
+
+    $this->travelTo(now()->addDays(31));
+
+    expect($subscription->fresh()->isExpired())->toBeTrue();
+});
+```
+
+## Warning Signs
+
+- You're mocking an Eloquent model — this is almost always wrong. Use a factory instead.
+- You're mocking a class you own — consider whether the design is wrong, not the test.
+- Your mock setup is longer than your assertion — the test is probably testing the wrong thing.

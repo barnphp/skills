@@ -16,32 +16,37 @@ During codebase exploration, also look for existing documentation:
 
 ### File structure
 
-Most repos have a single context:
+Most Laravel repos have a single context:
 
 ```
 /
 ├── CONTEXT.md
 ├── docs/
-│   └── adr/
-│       ├── 0001-event-sourced-orders.md
-│       └── 0002-postgres-for-write-model.md
-└── src/
+│   ├── adr/
+│   │   ├── 0001-single-action-controllers.md
+│   │   └── 0002-no-repository-pattern.md
+│   └── agents/
+│       ├── issue-tracker.md
+│       ├── triage-labels.md
+│       └── domain.md
+└── app/
 ```
 
-If a `CONTEXT-MAP.md` exists at the root, the repo has multiple contexts. The map points to where each one lives:
+If a `CONTEXT-MAP.md` exists at the root, the repo has multiple contexts (e.g. a DDD monorepo with `app/Domain/`):
 
 ```
 /
 ├── CONTEXT-MAP.md
 ├── docs/
 │   └── adr/                          ← system-wide decisions
-├── src/
-│   ├── ordering/
-│   │   ├── CONTEXT.md
-│   │   └── docs/adr/                 ← context-specific decisions
-│   └── billing/
-│       ├── CONTEXT.md
-│       └── docs/adr/
+└── app/
+    └── Domain/
+        ├── Ordering/
+        │   ├── CONTEXT.md
+        │   └── docs/adr/             ← domain-specific decisions
+        └── Billing/
+            ├── CONTEXT.md
+            └── docs/adr/
 ```
 
 Create files lazily — only when you have something to write. If no `CONTEXT.md` exists, create one when the first term is resolved. If no `docs/adr/` exists, create it when the first ADR is needed.

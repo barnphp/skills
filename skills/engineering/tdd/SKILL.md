@@ -1,32 +1,27 @@
 ---
 name: tdd
-description: Test-driven development with red-green-refactor loop. Use when user wants to build features or fix bugs using TDD, mentions "red-green-refactor", wants integration tests, or asks for test-first development.
+description: Test-driven development with red-green-refactor loop using Pest v4. Use when user wants to build features or fix bugs using TDD, mentions "red-green-refactor", wants feature tests or unit tests, wants browser testing, or asks for test-first development in Laravel.
 ---
 
-# Test-Driven Development
+# Test-Driven Development (Laravel / Pest v4)
 
 ## Philosophy
 
 **Core principle**: Tests should verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't.
 
-**Good tests** are integration-style: they exercise real code paths through public APIs. They describe _what_ the system does, not _how_ it does it. A good test reads like a specification - "user can checkout with valid cart" tells you exactly what capability exists. These tests survive refactors because they don't care about internal structure.
+**Good tests** exercise real code paths through HTTP requests, Actions, and Models. They describe *what* the system does, not *how* it does it. A good test reads like a specification — `a user can create a post` tells you exactly what capability exists. These tests survive refactors because they don't care about internal structure.
 
-**Bad tests** are coupled to implementation. They mock internal collaborators, test private methods, or verify through external means (like querying a database directly instead of using the interface). The warning sign: your test breaks when you refactor, but behavior hasn't changed. If you rename an internal function and tests fail, those tests were testing implementation, not behavior.
+**Bad tests** are coupled to implementation. They test private methods, assert on internal state, or verify through database queries when the HTTP response is the real observable behavior. The warning sign: your test breaks when you refactor, but user-facing behavior hasn't changed.
 
 See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for mocking guidelines.
 
 ## Anti-Pattern: Horizontal Slices
 
-**DO NOT write all tests first, then all implementation.** This is "horizontal slicing" - treating RED as "write all tests" and GREEN as "write all code."
+**DO NOT write all tests first, then all implementation.** This is horizontal slicing.
 
-This produces **crap tests**:
+This produces tests that verify imagined behavior, not actual behavior. You outrun your headlights and commit to test structure before understanding the implementation.
 
-- Tests written in bulk test _imagined_ behavior, not _actual_ behavior
-- You end up testing the _shape_ of things (data structures, function signatures) rather than user-facing behavior
-- Tests become insensitive to real changes - they pass when behavior breaks, fail when behavior is fine
-- You outrun your headlights, committing to test structure before understanding the implementation
-
-**Correct approach**: Vertical slices via tracer bullets. One test → one implementation → repeat. Each test responds to what you learned from the previous cycle. Because you just wrote the code, you know exactly what behavior matters and how to verify it.
+**Correct approach**: Vertical slices via tracer bullets. One test → one implementation → repeat. Each test responds to what you learned from the previous cycle.
 
 ```
 WRONG (horizontal):
@@ -37,38 +32,61 @@ RIGHT (vertical):
   RED→GREEN: test1→impl1
   RED→GREEN: test2→impl2
   RED→GREEN: test3→impl3
-  ...
 ```
+
+## Laravel Vertical Slice
+
+A complete slice in Laravel covers all layers in one pass:
+
+```
+migration → model → factory → form request → action → controller → route → feature test
+```
+
+Never test a layer in isolation when a feature test through the full stack is possible and fast.
 
 ## Workflow
 
 ### 1. Planning
 
-When exploring the codebase, use the project's domain glossary so that test names and interface vocabulary match the project's language, and respect ADRs in the area you're touching.
+Read `CONTEXT.md` and relevant ADRs before writing anything. Use the project's domain vocabulary in test names and descriptions.
 
 Before writing any code:
 
-- [ ] Confirm with user what interface changes are needed
-- [ ] Confirm with user which behaviors to test (prioritize)
-- [ ] Identify opportunities for [deep modules](deep-modules.md) (small interface, deep implementation)
-- [ ] Design interfaces for [testability](interface-design.md)
-- [ ] List the behaviors to test (not implementation steps)
+- [ ] Confirm with user what the public interface is (route, Action signature, or Model method)
+- [ ] Confirm which behaviors to test — prioritize the critical path
+- [ ] Identify the right test type for each behavior (see [tests.md](tests.md))
+- [ ] List the behaviors to test — not implementation steps
 - [ ] Get user approval on the plan
 
-Ask: "What should the public interface look like? Which behaviors are most important to test?"
+Ask: "What is the public interface? Which behaviors matter most to test?"
 
-**You can't test everything.** Confirm with the user exactly which behaviors matter most. Focus testing effort on critical paths and complex logic, not every possible edge case.
+**You can't test everything.** Focus on critical paths and complex logic, not every edge case.
 
 ### 2. Tracer Bullet
 
 Write ONE test that confirms ONE thing about the system:
+
+```php
+it('allows a user to create a post', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)
+        ->postJson('/api/posts', [
+            'title' => 'Hello World',
+            'body'  => 'My first post.',
+        ]);
+
+    $response->assertCreated();
+    $this->assertDatabaseHas('posts', ['title' => 'Hello World']);
+});
+```
 
 ```
 RED:   Write test for first behavior → test fails
 GREEN: Write minimal code to pass → test passes
 ```
 
-This is your tracer bullet - proves the path works end-to-end.
+This is your tracer bullet — it proves the full path works end-to-end.
 
 ### 3. Incremental Loop
 
@@ -82,19 +100,36 @@ GREEN: Minimal code to pass → passes
 Rules:
 
 - One test at a time
-- Only enough code to pass current test
+- Only enough code to pass the current test
 - Don't anticipate future tests
-- Keep tests focused on observable behavior
+- Keep tests focused on observable behavior (HTTP responses, database state, dispatched jobs)
 
-### 4. Refactor
+### 4. Browser Testing (Pest v4)
+
+Use browser tests for flows that require JavaScript, Livewire interactions, or multi-step UI flows. See [browser-tests.md](browser-tests.md).
+
+```php
+it('allows a user to submit the contact form', function () {
+    $this->browse(function (Browser $browser) {
+        $browser->visit('/contact')
+            ->type('name', 'John Doe')
+            ->type('email', 'john@example.com')
+            ->press('Send')
+            ->assertSee('Thank you');
+    });
+});
+```
+
+Only reach for browser tests when a feature test through the HTTP layer cannot cover the behavior. Browser tests are slower — keep them for flows that genuinely require a browser.
+
+### 5. Refactor
 
 After all tests pass, look for [refactor candidates](refactoring.md):
 
 - [ ] Extract duplication
-- [ ] Deepen modules (move complexity behind simple interfaces)
-- [ ] Apply SOLID principles where natural
-- [ ] Consider what new code reveals about existing code
-- [ ] Run tests after each refactor step
+- [ ] Move business logic into Actions if it's sitting in controllers
+- [ ] Slim down Models — scopes are fine, logic is not
+- [ ] Run `composer check` after each refactor step
 
 **Never refactor while RED.** Get to GREEN first.
 
@@ -102,8 +137,9 @@ After all tests pass, look for [refactor candidates](refactoring.md):
 
 ```
 [ ] Test describes behavior, not implementation
-[ ] Test uses public interface only
-[ ] Test would survive internal refactor
+[ ] Test uses HTTP or public Action interface — not private methods
+[ ] Test would survive an internal refactor
 [ ] Code is minimal for this test
 [ ] No speculative features added
+[ ] composer check passes
 ```

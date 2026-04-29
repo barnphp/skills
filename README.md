@@ -1,45 +1,33 @@
-<p>
-  <a href="https://www.aihero.dev/s/skills-newsletter">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://res.cloudinary.com/total-typescript/image/upload/v1777382277/skills-repo-dark_2x.png">
-      <source media="(prefers-color-scheme: light)" srcset="https://res.cloudinary.com/total-typescript/image/upload/v1777382277/skill-repo-light_2x.png">
-      <img alt="Skills" src="https://res.cloudinary.com/total-typescript/image/upload/v1777382277/skill-repo-light_2x.png" width="369">
-    </picture>
-  </a>
-</p>
+# Barnphp Skills
 
-# Skills For Real Engineers
+Agent skills for Laravel developers who want to ship real applications — not vibe-code their way into a ball of mud.
 
-My agent skills that I use every day to do real engineering - not vibe coding.
+These skills are small, composable, and opinionated. They work with any AI agent (OpenCode, Claude Code, Codex). They encode decades of software engineering fundamentals, adapted for the Laravel ecosystem. Hack them. Extend them. Make them yours.
 
-Developing real applications is hard. Approaches like GSD, BMAD, and Spec-Kit try to help by owning the process. But while doing so, they take away your control and make bugs in the process hard to resolve.
+## Quickstart
 
-These skills are designed to be small, easy to adapt, and composable. They work with any model. They're based on decades of engineering experience. Hack around with them. Make them your own. Enjoy.
-
-If you want to keep up with changes to these skills, and any new ones I create, you can join ~60,000 other devs on my newsletter:
-
-[Sign Up To The Newsletter](https://www.aihero.dev/s/skills-newsletter)
-
-## Quickstart (30-second setup)
-
-1. Run the skills.sh installer:
+**Primary** — via [laravel/boost](https://github.com/laravel/boost):
 
 ```bash
-npx skills@latest add mattpocock/skills
+php artisan boost:add-skill barnphp/skills
 ```
 
-2. Pick the skills you want, and which coding agents you want to install them on. **Make sure you select `/setup-matt-pocock-skills`**.
+**Fallback** — clone and link manually:
 
-3. Run `/setup-matt-pocock-skills` in your agent. It will:
-   - Ask you which issue tracker you want to use (GitHub, Linear, or local files)
-   - Ask you what labels you apply to ticks when you triage them (`/triage` uses labels)
-   - Ask you where you want to save any docs we create
+```bash
+git clone https://github.com/barnphp/skills
+cd skills && bash scripts/link-skills.sh
+```
 
-4. Bam - you're ready to go.
+Then run `/setup-barnphp-skills` in your agent. It will:
+- Ask which issue tracker you use (GitHub or local files)
+- Ask what triage labels you apply to issues
+- Scaffold `CONTEXT.md` with a starter Laravel vocabulary
+- Create an empty `docs/adr/` directory
 
 ## Why These Skills Exist
 
-I built these skills as a way to fix common failure modes I see with Claude Code, Codex, and other coding agents.
+These skills fix four failure modes I see repeatedly in AI-assisted Laravel development.
 
 ### #1: The Agent Didn't Do What I Want
 
@@ -47,71 +35,63 @@ I built these skills as a way to fix common failure modes I see with Claude Code
 >
 > David Thomas & Andrew Hunt, [The Pragmatic Programmer](https://www.amazon.co.uk/Pragmatic-Programmer-Anniversary-Journey-Mastery/dp/B0833F1T3V)
 
-**The Problem**. The most common failure mode in software development is misalignment. You think the dev knows what you want. Then you see what they've built - and you realize it didn't understand you at all.
+**The Problem.** Misalignment is the most common failure mode in software development. You ask the agent to build a feature. It builds something technically correct but completely wrong. The communication gap between what you imagine and what the agent produces is real — and it costs hours.
 
-This is just the same in the AI age. There is a communication gap between you and the agent. The fix for this is a **grilling session** - getting the agent to ask you detailed questions about what you're building.
+**The Fix** is a grilling session before you write a single line of code:
 
-**The Fix** is to use:
+- [`/grill-me`](./skills/productivity/grill-me/SKILL.md) — for any plan or design decision
+- [`/grill-with-docs`](./skills/engineering/grill-with-docs/SKILL.md) — same, but cross-references your `CONTEXT.md` and ADRs to keep decisions consistent with what you've already built
 
-- [`/grill-me`](./skills/productivity/grill-me/SKILL.md) - for non-code uses
-- [`/grill-with-docs`](./skills/engineering/grill-with-docs/SKILL.md) - same as [`/grill-me`](./skills/productivity/grill-me/SKILL.md), but adds more goodies (see below)
-
-These are my most popular skills. They help you align with the agent before you get started, and think deeply about the change you're making. Use them _every_ time you want to make a change.
+Use them every time you're about to make a meaningful change.
 
 ### #2: The Agent Is Way Too Verbose
 
 > With a ubiquitous language, conversations among developers and expressions of the code are all derived from the same domain model.
 >
-> Eric Evans, [Domain-Driven-Design](https://www.amazon.co.uk/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215)
+> Eric Evans, [Domain-Driven Design](https://www.amazon.co.uk/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215)
 
-**The Problem**: At the start of a project, devs and the people they're building the software for (the domain experts) are usually speaking different languages.
+**The Problem.** Laravel projects accumulate vocabulary drift fast. "Service", "manager", "handler", "repository" — different devs (and agents) mean different things. Without a shared language, the agent uses 20 words where 1 will do and names things inconsistently across the codebase.
 
-I felt the same tension with my agents. Agents are usually dropped into a project and asked to figure out the jargon as they go. So they use 20 words where 1 will do.
-
-**The Fix** for this is a shared language. It's a document that helps agents decode the jargon used in the project.
+**The Fix** is a `CONTEXT.md` — a living glossary that gives the agent a shared vocabulary for your project. Terms like `Action`, `Form Request`, `Job`, `Policy` get defined once and used consistently.
 
 <details>
-<summary>
-Example
-</summary>
+<summary>Example</summary>
 
-Here's an example [`CONTEXT.md`](https://github.com/mattpocock/course-video-manager/blob/076a5a7a182db0fe1e62971dd7a68bcadf010f1c/CONTEXT.md), from my `course-video-manager` repo. Which one is easier to read?
+Which is easier to read?
 
-- **BEFORE**: "There's a problem when a lesson inside a section of a course is made 'real' (i.e. given a spot in the file system)"
-- **AFTER**: "There's a problem with the materialization cascade"
+- **BEFORE**: "There's a problem when the data submitted by the user gets validated and then passed to the class that handles the business logic before being persisted"
+- **AFTER**: "There's a problem in the Action's handle method before persistence"
 
-This concision pays off session after session.
+This concision pays off every session.
 
 </details>
 
-This is built into [`/grill-with-docs`](./skills/engineering/grill-with-docs/SKILL.md). It's a grilling session, but that helps you build a shared language with the AI, and document hard-to-explain decisions in ADR's.
-
-It's hard to explain how powerful this is. It might be the single coolest technique in this repo. Try it, and see.
+[`/grill-with-docs`](./skills/engineering/grill-with-docs/SKILL.md) builds this shared language inline as you design, and records hard-to-explain decisions as ADRs.
 
 > [!TIP]
-> A shared language has many other benefits than reducing verbosity:
+> A shared language has compounding benefits:
 >
-> - **Variables, functions and files are named consistently**, using the shared language
-> - As a result, the **codebase is easier to navigate** for the agent
-> - The agent also **spends fewer tokens on thinking**, because it has access to a more concise language
+> - **Models, Actions, and Jobs are named consistently** across the codebase
+> - The **codebase is easier for the agent to navigate** without re-reading everything
+> - The agent **spends fewer tokens on thinking**, because it has precise language to work with
 
 ### #3: The Code Doesn't Work
 
-> "Always take small, deliberate steps. The rate of feedback is your speed limit. Never take on a task that’s too big."
+> "Always take small, deliberate steps. The rate of feedback is your speed limit. Never take on a task that's too big."
 >
 > David Thomas & Andrew Hunt, [The Pragmatic Programmer](https://www.amazon.co.uk/Pragmatic-Programmer-Anniversary-Journey-Mastery/dp/B0833F1T3V)
 
-**The Problem**: Let's say that you and the agent are aligned on what to build. What happens when the agent _still_ produces crap?
+**The Problem.** Even when the agent understands what to build, it still produces bugs. Without fast feedback loops the agent flies blind — generating plausible-looking code with hidden defects.
 
-It's time to look at your feedback loops. Without feedback on how the code it produces actually runs, the agent will be flying blind.
+**The Fix** is tight feedback loops at every layer.
 
-**The Fix**: You need the usual tranche of feedback loops: static types, browser access, and automated tests.
+For automated tests, a red-green-refactor loop is critical. The agent writes a failing Pest test first, then writes the minimal code to pass it. Each vertical slice — migration, model, action, controller, route, feature test — is completed before the next begins.
 
-For automated tests, a red-green-refactor loop is critical. This is where the agent writes a failing test first, then fixes the test. This helps give the agent a consistent level of feedback that results in far better code.
+- [`/tdd`](./skills/engineering/tdd/SKILL.md) — red-green-refactor with Pest v4, feature tests, unit tests, datasets, and browser testing
 
-I've built a **[`/tdd`](./skills/engineering/tdd/SKILL.md) skill** you can slot into any project. It encourages red-green-refactor and gives the agent plenty of guidance on what makes good and bad tests.
+For debugging, the agent pulls live context directly from your application using [laravel/boost](https://github.com/laravel/boost) MCP tools — reading the last error, scanning log entries, inspecting the database schema — rather than asking you to sprinkle `dd()` calls.
 
-For debugging, I've also built a **[`/diagnose`](./skills/engineering/diagnose/SKILL.md)** skill that wraps best debugging practices into a simple loop.
+- [`/diagnose`](./skills/engineering/diagnose/SKILL.md) — AI-native debugging loop powered by laravel/boost
 
 ### #4: We Built A Ball Of Mud
 
@@ -119,40 +99,39 @@ For debugging, I've also built a **[`/diagnose`](./skills/engineering/diagnose/S
 >
 > Kent Beck, [Extreme Programming Explained](https://www.amazon.co.uk/Extreme-Programming-Explained-Embrace-Change/dp/0321278658)
 
-> "The best modules are deep. They allow a lot of functionality to be accessed through a simple interface."
->
-> John Ousterhout, [A Philosophy Of Software Design](https://www.amazon.co.uk/Philosophy-Software-Design-2nd/dp/173210221X)
+**The Problem.** Agents accelerate software entropy. Fat controllers, logic-in-middleware, Eloquent models doing everything — a Laravel codebase can become unmaintainable in weeks when an agent is moving fast.
 
-**The Problem**: Most apps built with agents are complex and hard to change. Because agents can radically speed up coding, they also accelerate software entropy. Codebases get more complex at an unprecedented rate.
+**The Fix** is caring about Laravel architecture from day one:
 
-**The Fix** for this is a radical new approach to AI-powered development: caring about the design of the code.
-
-This is built in to every layer of these skills:
-
-- [`/to-prd`](./skills/engineering/to-prd/SKILL.md) quizzes you about which modules you're touching before creating a PRD
-- [`/zoom-out`](./skills/engineering/zoom-out/SKILL.md) tells the agent to explain code in the context of the whole system
-
-And crucially, [`/improve-codebase-architecture`](./skills/engineering/improve-codebase-architecture/SKILL.md) helps you rescue a codebase that has become a ball of mud. I recommend running it on your codebase once every few days.
+- [`/to-prd`](./skills/engineering/to-prd/SKILL.md) — before writing code, identify which Actions, Models, and Jobs are involved
+- [`/zoom-out`](./skills/engineering/zoom-out/SKILL.md) — ask the agent where a piece of code sits in the request lifecycle and whether it belongs in a Job, an Action, or a Controller
+- [`/improve-codebase-architecture`](./skills/engineering/improve-codebase-architecture/SKILL.md) — rescue a drifting codebase by surfacing fat controllers, anemic models, and misplaced business logic. Run it every few days.
 
 ### Summary
 
-Software engineering fundamentals matter more than ever. These skills are my best effort at condensing these fundamentals into repeatable practices, to help you ship the best apps of your career. Enjoy.
+Software engineering fundamentals matter more than ever. These skills are Barnphp's best effort at condensing those fundamentals into repeatable Laravel-native practices. Enjoy.
+
+---
+
+> **Standing on the shoulders of giants.** These skills are a Laravel port of [Matt Pocock](https://www.mattpocock.com/)'s original [skills repo](https://github.com/mattpocock/skills). Matt is the author of [Total TypeScript](https://www.totaltypescript.com/) and one of the sharpest engineering minds in the JavaScript ecosystem. His original framing — the four failure modes, the grilling sessions, the shared language discipline, the red-green-refactor loop — is the foundation everything here is built on. Thank you, Matt.
+
+---
 
 ## Reference
 
 ### Engineering
 
-Skills I use daily for code work.
+Skills for daily Laravel code work.
 
-- **[diagnose](./skills/engineering/diagnose/SKILL.md)** — Disciplined diagnosis loop for hard bugs and performance regressions: reproduce → minimise → hypothesise → instrument → fix → regression-test.
+- **[diagnose](./skills/engineering/diagnose/SKILL.md)** — AI-native debugging loop powered by laravel/boost MCP tools: last-error → read-log-entries → database-schema → hypothesise → fix → regression-test.
 - **[grill-with-docs](./skills/engineering/grill-with-docs/SKILL.md)** — Grilling session that challenges your plan against the existing domain model, sharpens terminology, and updates `CONTEXT.md` and ADRs inline.
-- **[triage](./skills/engineering/triage/SKILL.md)** — Triage issues through a state machine of triage roles.
-- **[improve-codebase-architecture](./skills/engineering/improve-codebase-architecture/SKILL.md)** — Find deepening opportunities in a codebase, informed by the domain language in `CONTEXT.md` and the decisions in `docs/adr/`.
-- **[setup-matt-pocock-skills](./skills/engineering/setup-matt-pocock-skills/SKILL.md)** — Scaffold the per-repo config (issue tracker, triage label vocabulary, domain doc layout) that the other engineering skills consume. Run once per repo before using `to-issues`, `to-prd`, `triage`, `diagnose`, `tdd`, `improve-codebase-architecture`, or `zoom-out`.
-- **[tdd](./skills/engineering/tdd/SKILL.md)** — Test-driven development with a red-green-refactor loop. Builds features or fixes bugs one vertical slice at a time.
-- **[to-issues](./skills/engineering/to-issues/SKILL.md)** — Break any plan, spec, or PRD into independently-grabbable GitHub issues using vertical slices.
-- **[to-prd](./skills/engineering/to-prd/SKILL.md)** — Turn the current conversation context into a PRD and submit it as a GitHub issue. No interview — just synthesizes what you've already discussed.
-- **[zoom-out](./skills/engineering/zoom-out/SKILL.md)** — Tell the agent to zoom out and give broader context or a higher-level perspective on an unfamiliar section of code.
+- **[triage](./skills/engineering/triage/SKILL.md)** — Triage issues through a state machine of triage roles, using Laravel-flavoured vocabulary and labels.
+- **[improve-codebase-architecture](./skills/engineering/improve-codebase-architecture/SKILL.md)** — Surface fat controllers, anemic models, and misplaced business logic. Proposes refactors toward Laravel conventions (Actions, Form Requests, Jobs, Policies).
+- **[setup-barnphp-skills](./skills/engineering/setup-barnphp-skills/SKILL.md)** — Scaffold the per-repo config (issue tracker, triage labels, `CONTEXT.md` starter vocabulary, `docs/adr/`) that the other engineering skills consume. Run once per repo.
+- **[tdd](./skills/engineering/tdd/SKILL.md)** — Test-driven development with Pest v4: red-green-refactor, feature tests, unit tests, datasets, and browser testing. One vertical Laravel slice at a time.
+- **[to-issues](./skills/engineering/to-issues/SKILL.md)** — Break any plan, spec, or PRD into independently-grabbable GitHub issues using Laravel vertical slices (migration → model → action → controller → route → Pest feature test).
+- **[to-prd](./skills/engineering/to-prd/SKILL.md)** — Turn the current conversation context into a PRD and submit it as a GitHub issue. No interview — synthesizes what you've already discussed.
+- **[zoom-out](./skills/engineering/zoom-out/SKILL.md)** — Tell the agent to zoom out, map the relevant Laravel layers, and explain where a piece of code sits in the request lifecycle.
 
 ### Productivity
 
@@ -164,9 +143,7 @@ General workflow tools, not code-specific.
 
 ### Misc
 
-Tools I keep around but rarely use.
+Tools kept around for specific situations.
 
-- **[git-guardrails-claude-code](./skills/misc/git-guardrails-claude-code/SKILL.md)** — Set up Claude Code hooks to block dangerous git commands (push, reset --hard, clean, etc.) before they execute.
-- **[migrate-to-shoehorn](./skills/misc/migrate-to-shoehorn/SKILL.md)** — Migrate test files from `as` type assertions to @total-typescript/shoehorn.
-- **[scaffold-exercises](./skills/misc/scaffold-exercises/SKILL.md)** — Create exercise directory structures with sections, problems, solutions, and explainers.
-- **[setup-pre-commit](./skills/misc/setup-pre-commit/SKILL.md)** — Set up Husky pre-commit hooks with lint-staged, Prettier, type checking, and tests.
+- **[git-guardrails](./skills/misc/git-guardrails-claude-code/SKILL.md)** — Set up an OpenCode plugin to block dangerous git commands (push, reset --hard, clean, etc.) before they execute.
+- **[setup-opencode-hooks](./skills/misc/setup-opencode-hooks/SKILL.md)** — Set up OpenCode hooks to run `composer check` (Pest + Pint + PHPStan + Rector) before every commit.
